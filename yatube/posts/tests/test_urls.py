@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -32,11 +34,11 @@ class PostURLTests(TestCase):
     def test_kod(self):
         field_urls_code = {
             reverse(
-                'posts:index'): 200,
+                'posts:index'): HTTPStatus.OK,
             reverse(
                 'posts:group_posts',
-                kwargs={'slug': self.group.slug}): 200,
-            '/unexisting_page/': 404,
+                kwargs={'slug': self.group.slug}): HTTPStatus.OK,
+            '/unexisting_page/': HTTPStatus.NOT_FOUND,
         }
         for url, response_code in field_urls_code.items():
             with self.subTest(url=url):
@@ -47,7 +49,7 @@ class PostURLTests(TestCase):
         """Адрес "/create" перенаправляет
         неавторизованного пользователя"""
         response = self.guest_client.get('/create/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertTrue(response, '/accounts/login/')
 
     def test_urls_uses_correct_template(self):

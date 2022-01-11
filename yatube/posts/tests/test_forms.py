@@ -1,11 +1,11 @@
 import shutil
 import tempfile
+from http import HTTPStatus
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.forms import PostForm
 from posts.models import Group, Post
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -27,9 +27,7 @@ class PostCreateFormTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый текст поста',
-            group=cls.group,
-        )
-        cls.form = PostForm()
+            group=cls.group,)
 
     @classmethod
     def tearDownClass(cls):
@@ -46,23 +44,27 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': self.post.text,
             'group': self.group.pk,
+            'author': self.post.author
         }
         response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertRedirects(response, reverse('posts:profile', kwargs={
             'username': self.user}))
         self.assertEqual(Post.objects.count(), posts_count + 1)
         last_object = Post.objects.order_by("-id").first()
         self.assertEqual(form_data['text'], last_object.text)
         self.assertEqual(form_data['group'], last_object.group.pk)
+        self.assertEqual(form_data['author'], last_object.author)
 
     def test_edit_post(self):
         form_data = {
             'text': self.post.text,
             'group': self.group.pk,
+            'author': self.post.author,
         }
         response = self.authorized_client.post(
             reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
@@ -73,8 +75,10 @@ class PostCreateFormTests(TestCase):
             response, reverse(
                 'posts:post_detail', kwargs={'post_id': self.post.id})
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(form_data['text'], self.post.text)
         self.assertEqual(form_data['group'], self.group.pk)
+        self.assertEqual(form_data['author'], self.post.author)
 
     def test_create_post_guest_client(self):
         """Попытка создать запись как гостевой пользователь"""
@@ -109,6 +113,5 @@ class PostCreateFormTests(TestCase):
         )
         post_edit_redirect = f'{login_create_post}?next={post_edit_url}'
         self.assertRedirects(response, post_edit_redirect)
-        self.assertEqual(self.group.pk, form_data['group'])
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertNotEqual(self.post.text, form_data['text'])

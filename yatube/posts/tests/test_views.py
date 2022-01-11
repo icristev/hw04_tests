@@ -19,7 +19,7 @@ class PostPagesTests(TestCase):
             description='Тестовое описание',
             slug='test-slug',
         )
-        cls.user = User.objects.create_user(username='HasNoName')
+        cls.user = User.objects.create_user(username='no_name')
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый текст поста',

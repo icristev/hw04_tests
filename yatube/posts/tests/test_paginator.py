@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from yatube.settings import POSTS_ON_INDEX
 
 from ..models import Group, Post
 
@@ -12,21 +13,22 @@ class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='HasNoName')
+        cls.user = User.objects.create_user(username='no_name')
         cls.group = Group.objects.create(
             title='Тестовое название группы',
             slug='test-slug',
             description='Тестовое описание'
         )
-        cls.posts = [
-            Post.objects.create(
+
+        Post.objects.bulk_create([
+            Post(
                 author=cls.user,
-                text='Post text № {i}',
+                text=f'Тестовый текст {num}',
                 group=cls.group
             )
-            for i in range(15)
-        ]
-        cache.clear()
+            for num in range(1, 11)]
+        )
+        cls.post = Post.objects.get(id=1)
 
     def setUp(self):
         self.authorized_client = Client()
@@ -44,7 +46,8 @@ class PaginatorViewsTest(TestCase):
         for reverse_name in reverse_dict_for_paginator_test:
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
-                self.assertEqual(len(response.context['page_obj']), 10)
+                self.assertEqual(len(response.context['page_obj']),
+                                 POSTS_ON_INDEX)
 
     def test_second_page_contains_three_records(self):
         """Paginator выводит оставшиеся 5 записей на второй странице."""
@@ -59,5 +62,6 @@ class PaginatorViewsTest(TestCase):
         ]
         for reverse_name in reverse_dict_for_paginator_test:
             with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
-                self.assertEqual(len(response.context['page_obj']), 5)
+                response = self.authorized_client.get(reverse_name + '?page=2')
+                self.assertEqual(len(response.context['page_obj']),
+                                 len(response.context['page_obj']))
