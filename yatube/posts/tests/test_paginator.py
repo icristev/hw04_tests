@@ -26,7 +26,7 @@ class PaginatorViewsTest(TestCase):
                 text=f'Тестовый текст {num}',
                 group=cls.group
             )
-            for num in range(1, 11)]
+            for num in range(1, 18)]
         )
         cls.post = Post.objects.get(id=1)
 
@@ -62,7 +62,7 @@ class PaginatorViewsTest(TestCase):
         ]
         for reverse_name in reverse_dict_for_paginator_test:
             with self.subTest(reverse_name=reverse_name):
-                posts_on_the_last_page = Post.objects % POSTS_ON_INDEX
                 response = self.authorized_client.get(reverse_name + '?page=2')
-                self.assertEqual(len(response.context['page_obj']),
-                                 posts_on_the_last_page)
+                self.assertEqual(Post.objects.count() %
+                                 len(response.context['page_obj']),
+                                 (Post.objects.count() % POSTS_ON_INDEX))
