@@ -28,7 +28,6 @@ class PaginatorViewsTest(TestCase):
             )
             for num in range(1, 18)]
         )
-        cls.post = Post.objects.get(id=1)
 
     def setUp(self):
         self.authorized_client = Client()
